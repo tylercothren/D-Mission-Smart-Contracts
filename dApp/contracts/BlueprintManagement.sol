@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import "./BluprintBase.sol";
+import "./BlueprintBase.sol";
 import "./ERC721Draft.sol";
 
 /// @title The facet of the Matchboxes! core contract that manages ownership, ERC-721 (draft) compliant.
@@ -39,7 +39,7 @@ contract BlueprintManagement is BlueprintBase, ERC721 {
         // Safety check to prevent against an unexpected 0x0 default.
         require(_to != address(0));
         // You can only send your own Blueprint.
-        require(_owns(msg.sender, _tokenId));
+        require(_ownsBlueprint(msg.sender, _tokenId));
 
         // Reassign ownership, clear pending approvals, emit Transfer event.
         _transferBlueprint(msg.sender, _to, _tokenId);
