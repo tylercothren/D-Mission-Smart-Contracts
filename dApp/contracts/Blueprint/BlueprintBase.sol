@@ -1,7 +1,10 @@
-pragma solidity ^0.4.23;
-import "./DMissionAccessControl.sol";
+pragma solidity ^0.4.20;
 
-contract BlueprintBase is DMissionAccessControl {
+import "./DMissionAccessControl.sol";
+import "./Token/ERC721/IERC721.sol";
+
+contract BlueprintBase is DMissionAccessControl, ERC721
+{
     /*** EVENTS ***/
 
     event ManufacturedBlueprint(uint256 blueprintId, address owner, uint256 seriesId, string partName);
@@ -49,23 +52,28 @@ contract BlueprintBase is DMissionAccessControl {
     mapping (uint256 => address) public attributeIndexToApproved;
     
     /// Assigns ownership of a specific Blueprint to an address.
-    function _transferBlueprint(address _from, address _to, uint256 _tokenId) internal  {
+    function _transferBlueprint(address _from, address _to, uint256 _tokenId) internal  onlyCLevel
+    {
         // Since the number of Blueprint is capped to 2^32 we can't overflow this
         blueprintOwnershipTokenCount[_to]++;
+        
         // transfer ownership
         blueprintIndexToOwner[_tokenId] = _to;
+        
         // When creating new Blueprint _from is 0x0, but we can't account that address.
         if (_from != address(0)) {
             blueprintOwnershipTokenCount[_from]--;
             // clear any previously approved ownership exchange
             delete blueprintIndexToApproved[_tokenId];
         }
+        
         // Emit the transfer event.
-        emit BlueprintTransfer(_from, _to, _tokenId);
+        BlueprintTransfer(_from, _to, _tokenId);
     }
     
     /// Assigns ownership of a specific Attribute to an address.
-    function _transferAttribute(address _from, address _to, uint256 _tokenId) internal  {
+    function _transferAttribute(address _from, address _to, uint256 _tokenId) internal onlyCLevel 
+    {
         // Since the number of Attributes is capped to 2^32 we can't overflow this
         attributeOwnershipTokenCount[_to]++;
         // transfer ownership
@@ -77,17 +85,11 @@ contract BlueprintBase is DMissionAccessControl {
             delete attributeIndexToApproved[_tokenId];
         }
         // Emit the transfer event.
-        emit AttributeTransfer(_from, _to, _tokenId);
+        AttributeTransfer(_from, _to, _tokenId);
     }
 
     ///  Creates a new Blueprint and stores it.
-    function _createBlueprint(
-        uint256 _seriesId,
-        string _partName,
-        address _owner
-    ) 
-        internal
-        returns (uint)
+    function _createBlueprint( uint256 _seriesId, string memory _partName, address _owner ) internal onlyCLevel returns (uint)
     {
         Blueprint memory _blueprint = Blueprint({
             seriesId: uint32(_seriesId),
@@ -99,7 +101,7 @@ contract BlueprintBase is DMissionAccessControl {
         require(newBlueprintId == uint256(uint32(newBlueprintId)));
 
         // emit the manufacture event
-        emit ManufacturedBlueprint(
+        ManufacturedBlueprint(
             newBlueprintId,
             _owner,
             uint256(_blueprint.seriesId),
@@ -108,20 +110,13 @@ contract BlueprintBase is DMissionAccessControl {
 
         // This will assign ownership, and also emit the Transfer event as
         // per ERC721 draft
-        _transferBlueprint(0, _owner, newBlueprintId);
+        _transferBlueprint(address(0), _owner, newBlueprintId);
 
         return newBlueprintId;
     }
     
     ///  Creates a new Attribute and stores it.
-    function _createAttribute(
-        uint256 _blueprintId,
-        uint256 _targetId,
-        uint128 _affect,
-        address _owner
-    )
-        internal
-        returns (uint)
+    function _createAttribute( uint256 _blueprintId, uint256 _targetId, uint128 _affect, address _owner ) internal onlyCLevel returns (uint)
     {
         Attribute memory _attribute = Attribute({
             blueprintId: uint256(_blueprintId),
@@ -134,29 +129,17 @@ contract BlueprintBase is DMissionAccessControl {
         require(newAttributeId == uint256(uint32(newAttributeId)));
 
         // emit the manufacture event
-        emit ManufacturedAttribute(
-            newAttributeId,
-            _owner,
-            uint256(_attribute.blueprintId),
-            uint256(_attribute.targetId),
-            uint128(_attribute.affect)
-        );
+        ManufacturedAttribute( newAttributeId, _owner, uint256(_attribute.blueprintId), uint256(_attribute.targetId), uint128(_attribute.affect) );
 
         // This will assign ownership, and also emit the Transfer event as
         // per ERC721 draft
-        _transferAttribute(0, _owner, newAttributeId);
+        _transferAttribute(address(0), _owner, newAttributeId);
 
         return newAttributeId;
     }
     
     ///  Creates new Blueprints in batch to save gas and stores it.
-    function _batchCreateBlueprint(
-        uint256[] _seriesIds,
-        string[] _partNames,
-        address[] _owners
-    )
-        internal
-        returns (uint[])
+    function _batchCreateBlueprint( uint256[] memory _seriesIds, string[] memory _partNames, address[] memory _owners ) internal onlyCLevel returns (uint[] memory)
     {
         Blueprint memory _blueprint;
         uint256[] memory newBlueprintIds;
@@ -178,29 +161,17 @@ contract BlueprintBase is DMissionAccessControl {
             require(newBlueprintIds[i] == uint256(uint32(newBlueprintIds[i])));
     
             // emit the manufacture event
-            emit ManufacturedBlueprint(
-                newBlueprintIds[i],
-                _owners[i],
-                uint256(_blueprint.seriesId),
-                _blueprint.partName
-            );
+            ManufacturedBlueprint( newBlueprintIds[i], _owners[i], uint256(_blueprint.seriesId), _blueprint.partName );
     
             // This will assign ownership, and also emit the Transfer event as
             // per ERC721 draft
-            _transferBlueprint(0, _owners[i], newBlueprintIds[i]);
+            _transferBlueprint(address(0), _owners[i], newBlueprintIds[i]);
         }
         return newBlueprintIds;
     }
     
     ///  Creates new Attributes in batch to save gas and stores it.
-    function _batchCreateAttribute(
-        uint256[] _blueprintIds,
-        uint256[] _targetIds,
-        int128[] _affects,
-        address[] _owners
-    )
-        internal 
-        returns (uint[])
+    function _batchCreateAttribute( uint256[] memory _blueprintIds, uint256[] memory _targetIds, int128[] memory _affects, address[] memory _owners ) internal onlyCLevel returns (uint[] memory)
     {
         Attribute memory _attribute;
         uint256[] memory newAttributeIds;
@@ -223,17 +194,11 @@ contract BlueprintBase is DMissionAccessControl {
             require(newAttributeIds[i] == uint256(uint32(newAttributeIds[i])));
     
             // emit the manufacture event
-            emit ManufacturedAttribute(
-                newAttributeIds[i],
-                _owners[i],
-                uint256(_attribute.blueprintId),
-                uint256(_attribute.targetId),
-                uint128(_attribute.affect)
-            );
+            ManufacturedAttribute( newAttributeIds[i],  _owners[i], uint256(_attribute.blueprintId), uint256(_attribute.targetId), uint128(_attribute.affect) );
     
             // This will assign ownership, and also emit the Transfer event as
             // per ERC721 draft
-            _transferAttribute(0, _owners[i], newAttributeIds[i]);
+            _transferAttribute(address(0), _owners[i], newAttributeIds[i]);
         }
 
         return newAttributeIds;

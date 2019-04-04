@@ -1,7 +1,10 @@
-pragma solidity ^0.4.23;
-import './DMissionAccessControl.sol';
+pragma solidity ^0.4.20;
 
-contract MatchboxBase is DMissionAccessControl {
+import './DMissionAccessControl.sol';
+import "./ERC721Draft.sol";
+
+contract MatchboxBase is DMissionAccessControl, ERC721
+{
     /*** EVENTS ***/
 
     event ManufacturedMatchbox(address owner, uint256 matchboxId, uint256 seriesId);
@@ -22,7 +25,7 @@ contract MatchboxBase is DMissionAccessControl {
 
     /*** STORAGE ***/
 
-    storage Matchbox[] matchboxes;
+    Matchbox[] matchboxes;
 
     mapping (uint256 => address) public matchboxIndexToOwner;
 
@@ -43,7 +46,7 @@ contract MatchboxBase is DMissionAccessControl {
             delete matchboxIndexToApproved[_tokenId];
         }
         // Emit the transfer event.
-        emit Transfer(_from, _to, _tokenId);
+        Transfer(_from, _to, _tokenId);
     }
 
     ///  An internal method that creates a new Matchbox and stores it.
