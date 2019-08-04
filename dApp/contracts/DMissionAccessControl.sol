@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.1;
 
 contract DMissionAccessControl {
 
@@ -32,7 +32,7 @@ contract DMissionAccessControl {
         _;
     }
 
-    function setCEO(address _newCEO) external onlyCEO {
+    function setCEO(address _newCEO) payable external onlyCEO {
         require(_newCEO != address(0));
 
         ceoAddress = _newCEO;

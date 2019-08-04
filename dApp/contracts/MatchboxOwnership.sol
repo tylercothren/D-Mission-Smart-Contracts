@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.1;
 
 import "./MatchboxBase.sol";
 import "./ERC721Draft.sol";
@@ -43,8 +43,8 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     /// @param _matchboxId - ID of Matchbox
     /// @param _recipient - Address to send the Matchbox to
     function rescueLostMatchbox(uint256 _matchboxId, address _recipient) public onlyCOO whenNotPaused {
-        require(_owns(this, _matchboxId));
-        _transfer(this, _recipient, _matchboxId);
+        require(_owns(address(this), _matchboxId));
+        _transfer(address(this), _recipient, _matchboxId);
     }
 
     /// @notice Returns the number of Matchboxes owned by a specific address.
@@ -96,7 +96,7 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
         _approve(_tokenId, _to);
 
         // Emit approval event.
-        Approval(msg.sender, _to, _tokenId);
+        emit Approval(msg.sender, _to, _tokenId);
     }
 
     /// @notice Transfer a Matchbox owned by another address, for which the calling address
@@ -149,7 +149,7 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     ///  certainly blow past the block gas limit once there are a large number of
     ///  Matchboxes in existence. Exists only to allow off-chain queries of ownership.
     ///  Optional method for ERC-721.
-    function tokensOfOwnerByIndex(address _owner, uint256 _index)
+    function matchboxesOfOwnerByIndex(address _owner, uint256 _index)
         external
         view
         returns (uint256 tokenId)

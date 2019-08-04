@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.5.1;
 import './DMissionAccessControl.sol';
 
 contract MatchboxBase is DMissionAccessControl {
@@ -22,7 +22,7 @@ contract MatchboxBase is DMissionAccessControl {
 
     /*** STORAGE ***/
 
-    storage Matchbox[] matchboxes;
+    Matchbox[] matchboxes;
 
     mapping (uint256 => address) public matchboxIndexToOwner;
 
@@ -67,7 +67,7 @@ contract MatchboxBase is DMissionAccessControl {
 
         // This will assign ownership, and also emit the Transfer event as
         // per ERC721 draft
-        _transfer(0, _owner, newMatchboxId);
+        _transfer(address(0), _owner, newMatchboxId);
 
         return newMatchboxId;
     }
