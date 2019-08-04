@@ -1,29 +1,35 @@
 pragma solidity ^0.5.1;
 
-contract DMissionAccessControl {
+contract DMissionAccessControl
+{
 
     address public ceoAddress;
     address public cfoAddress;
     address public cooAddress;
+    address public withdrawalAddress;
 
     bool public paused = false;
 
-    modifier onlyCEO() {
+    modifier onlyCEO()
+    {
         require(msg.sender == ceoAddress);
         _;
     }
 
-    modifier onlyCFO() {
+    modifier onlyCFO()
+    {
         require(msg.sender == cfoAddress);
         _;
     }
 
-    modifier onlyCOO() {
+    modifier onlyCOO()
+    {
         require(msg.sender == cooAddress);
         _;
     }
 
-    modifier onlyCLevel() {
+    modifier onlyCLevel()
+    {
         require(
             msg.sender == cooAddress ||
             msg.sender == ceoAddress ||
@@ -32,39 +38,66 @@ contract DMissionAccessControl {
         _;
     }
 
-    function setCEO(address _newCEO) payable external onlyCEO {
+    function setCEO(address _newCEO) external onlyCEO
+    {
         require(_newCEO != address(0));
 
         ceoAddress = _newCEO;
     }
 
-    function setCFO(address _newCFO) external onlyCEO {
+    function setCFO(address _newCFO) external onlyCEO
+    {
         require(_newCFO != address(0));
 
         cfoAddress = _newCFO;
     }
 
-    function setCOO(address _newCOO) external onlyCEO {
+    function setCOO(address _newCOO) external onlyCEO
+    {
         require(_newCOO != address(0));
 
         cooAddress = _newCOO;
     }
 
-    modifier whenNotPaused() {
+    /**
+    * @notice Sets a new withdrawalAddress
+    * @param _newWithdrawalAddress - the address where we'll send the funds
+    */
+    function setWithdrawalAddress(address _newWithdrawalAddress) external onlyCEO
+    {
+        require(_newWithdrawalAddress != address(0));
+        withdrawalAddress = _newWithdrawalAddress;
+    }
+
+    /**
+    * @notice Withdraw the balance to the withdrawalAddress
+    * @dev We set a withdrawal address seperate from the CFO because this allows us to withdraw to a cold wallet.
+    */
+    function withdrawBalance() external onlyCLevel
+    {
+        require(withdrawalAddress != address(0));
+        withdrawalAddress.transfer(this.balance);
+    }
+
+    modifier whenNotPaused()
+    {
         require(!paused);
         _;
     }
 
-    modifier whenPaused {
+    modifier whenPaused
+    {
         require(paused);
         _;
     }
 
-    function pause() external onlyCLevel whenNotPaused {
+    function pause() external onlyCLevel whenNotPaused
+    {
         paused = true;
     }
 
-    function unpause() public onlyCEO whenPaused {
+    function unpause() public onlyCEO whenPaused
+    {
         paused = false;
     }
 }

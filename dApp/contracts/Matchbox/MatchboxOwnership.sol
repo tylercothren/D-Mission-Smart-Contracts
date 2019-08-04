@@ -1,15 +1,23 @@
 pragma solidity ^0.5.1;
 
 import "./MatchboxBase.sol";
-import "./ERC721Draft.sol";
 
 /// @title The facet of the Matchboxes! core contract that manages ownership, ERC-721 (draft) compliant.
 /// @dev Ref: https://github.com/ethereum/EIPs/issues/721
-contract MatchboxOwnership is MatchboxBase, ERC721 {
+contract MatchboxOwnership is MatchboxBase {
 
     /// @notice Name and symbol of the non fungible token, as defined in ERC721.
     string public name = "D-Mission! [Matchboxes]";
     string public symbol = "DMM";
+
+    /**
+    * @notice Guarantees msg.sender is owner of the given Matchbox
+    * @param _tokenId uint256 ID of the Matchbox to validate its ownership belongs to msg.sender
+    */
+    modifier onlyOwnerOfMatchbox(uint256 _tokenId) {
+        require(_owns(msg.sender, _tokenId));
+        _;
+    }
 
     // bool public implementsERC721 = true;
     function implementsERC721() public pure returns (bool)
@@ -18,22 +26,27 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     }
 
     /// @dev Checks if a given address is the current owner of a particular Matchbox.
-    function _owns(address _claimant, uint256 _tokenId) internal view returns (bool) {
+    function _owns(address _claimant, uint256 _tokenId) internal view returns (bool)
+    {
         return matchboxIndexToOwner[_tokenId] == _claimant;
     }
 
     /// @dev Checks if a given address currently has transferApproval for a particular Matchbox.
     /// @param _claimant the address we are confirming Matchbox is approved for.
     /// @param _tokenId Matchbox id, only valid when > 0
-    function _approvedFor(address _claimant, uint256 _tokenId) internal view returns (bool) {
+    function _approvedFor(address _claimant, uint256 _tokenId) internal view returns (bool)
+    {
         return matchboxIndexToApproved[_tokenId] == _claimant;
     }
 
     /// @dev Marks an address as being approved for transferFrom(), overwriting any previous
     ///  approval. Setting _approved to address(0) clears all transfer approval.
-    function _approve(uint256 _tokenId, address _approved) internal {
+    function _approve(uint256 _tokenId, address _approved) internal
+    {
         matchboxIndexToApproved[_tokenId] = _approved;
-        //Approve Event?
+        
+        // Emit approval event.
+        Approval(msg.sender, _approved, _tokenId);
     }
 
     /// @dev Transfers a Matchbox owned by this contract to the specified address.
@@ -50,7 +63,8 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     /// @notice Returns the number of Matchboxes owned by a specific address.
     /// @param _owner The owner address to check.
     /// @dev Required for ERC-721 compliance
-    function balanceOf(address _owner) public view returns (uint256 count) {
+    function balanceOf(address _owner) external view returns (uint256 count)
+    {
         return ownershipTokenCount[_owner];
     }
 
@@ -60,15 +74,11 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     /// @param _to The address of the recipient, can be a user or contract.
     /// @param _tokenId The ID of the Matchbox to transfer.
     /// @dev Required for ERC-721 compliance.
-    function transfer(
-        address _to,
-        uint256 _tokenId
-    )
-        public
-        whenNotPaused
+    function transfer( address _to, uint256 _tokenId ) public whenNotPaused
     {
         // Safety check to prevent against an unexpected 0x0 default.
         require(_to != address(0));
+        
         // You can only send your own Matchbox.
         require(_owns(msg.sender, _tokenId));
 
@@ -82,16 +92,8 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     ///  clear all approvals.
     /// @param _tokenId The ID of the Matchbox that can be transferred if this call succeeds.
     /// @dev Required for ERC-721 compliance.
-    function approve(
-        address _to,
-        uint256 _tokenId
-    )
-        public
-        whenNotPaused
+    function approve( address _to, uint256 _tokenId ) external payable whenNotPaused onlyOwnerOfMatchbox(_tokenId)
     {
-        // Only an owner can grant transfer approval.
-        require(_owns(msg.sender, _tokenId));
-
         // Register the approval (replacing any previous approval).
         _approve(_tokenId, _to);
 
@@ -106,17 +108,10 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
     ///  including the caller.
     /// @param _tokenId The ID of the Matchbox to be transferred.
     /// @dev Required for ERC-721 compliance.
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _tokenId
-    )
-        public
-        whenNotPaused
+    function transferFrom( address _from, address _to, uint256 _tokenId ) external payable whenNotPaused onlyOwnerOfMatchbox(_tokenId)
     {
         // Check for approval and valid ownership
         require(_approvedFor(msg.sender, _tokenId));
-        require(_owns(_from, _tokenId));
 
         // Reassign ownership (also clears pending approvals and emits Transfer event).
         _transfer(_from, _to, _tokenId);
@@ -130,10 +125,7 @@ contract MatchboxOwnership is MatchboxBase, ERC721 {
 
     /// @notice Returns the address currently assigned ownership of a given Matchbox.
     /// @dev Required for ERC-721 compliance.
-    function ownerOf(uint256 _tokenId)
-        public
-        view
-        returns (address owner)
+    function ownerOf(uint256 _tokenId) external view returns (address owner)
     {
         owner = matchboxIndexToOwner[_tokenId];
 

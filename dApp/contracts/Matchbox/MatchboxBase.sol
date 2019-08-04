@@ -1,7 +1,9 @@
 pragma solidity ^0.5.1;
-import './DMissionAccessControl.sol';
+import '../DMissionAccessControl.sol';
+import "../ERC721Draft.sol";
 
-contract MatchboxBase is DMissionAccessControl {
+contract MatchboxBase is DMissionAccessControl, ERC721
+{
     /*** EVENTS ***/
 
     event ManufacturedMatchbox(address owner, uint256 matchboxId, uint256 seriesId);

@@ -1,5 +1,5 @@
 pragma solidity ^0.5.1;
-import "./DMissionAccessControl.sol";
+import "../DMissionAccessControl.sol";
 
 contract BlueprintBase is DMissionAccessControl {
 

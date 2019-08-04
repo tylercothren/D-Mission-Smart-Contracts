@@ -82,7 +82,7 @@ contract DMissionCore is DMissionAccessControl, MatchboxBase, BlueprintBase {
         targetId = uint256(att.targetId);
         affect = int128(att.affect);
     }
-    
+
     /// @notice Returns all the relevant information about a specific part.
     /// @param _id The ID of the part of interest.
     /*function getPart(uint256 _id)
